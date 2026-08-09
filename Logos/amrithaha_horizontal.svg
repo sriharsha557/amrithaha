@@ -1,0 +1,31 @@
+<svg width="640" height="170" viewBox="0 0 640 170" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="leafGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5FB65A"/>
+      <stop offset="1" stop-color="#1F7A3D"/>
+    </linearGradient>
+    <linearGradient id="deepGreen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2E8B4E"/>
+      <stop offset="1" stop-color="#17552C"/>
+    </linearGradient>
+    <style>
+      .word { font-family:'Georgia','Times New Roman',serif; font-weight:700; }
+      .sans { font-family:'Trebuchet MS','Segoe UI',sans-serif; }
+      .tel  { font-family:'Nirmala UI','Gautami','Noto Sans Telugu',sans-serif; }
+    </style>
+    <g id="mark">
+      <path d="M60 6 C 92 44, 108 76, 108 100 A48 48 0 1 1 12 100 C 12 76, 28 44, 60 6 Z" fill="url(#leafGrad)"/>
+      <path d="M60 34 C 46 60, 40 92, 60 132" fill="none" stroke="#EAF7E9" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
+      <path d="M60 66 C 70 70, 78 76, 82 86 M60 92 C 70 96, 77 102, 80 112" fill="none" stroke="#EAF7E9" stroke-width="3.5" stroke-linecap="round" opacity="0.7"/>
+      <circle cx="60" cy="18" r="7" fill="#F2C14E"/>
+    </g>
+  </defs>
+
+  <g transform="translate(15 10)">
+    <rect x="0" y="0" width="150" height="150" rx="34" fill="url(#deepGreen)"/>
+    <g transform="translate(15 8)"><use href="#mark"/></g>
+    <text x="185" y="70" class="word" font-size="66" fill="#17552C" letter-spacing="1">Amrithaha</text>
+    <text x="188" y="112" class="tel" font-size="30" fill="#2E8B4E">అమృతః</text>
+    <text x="188" y="140" class="sans" font-size="18" letter-spacing="5" fill="#9AA48C">HEALTHY · WHOLESOME · PURE</text>
+  </g>
+</svg>
