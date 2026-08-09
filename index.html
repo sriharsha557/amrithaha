@@ -78,7 +78,7 @@ header.scrolled{border-color:#e3dcc9;box-shadow:0 8px 24px -20px rgba(0,0,0,.4)}
   radial-gradient(circle at 30% 30%, #3a9a58, var(--green-700));border-radius:46% 54% 55% 45%/48% 44% 56% 52%;
   filter:drop-shadow(0 30px 50px rgba(23,85,44,.35));animation:morph 12s ease-in-out infinite}
 @keyframes morph{0%,100%{border-radius:46% 54% 55% 45%/48% 44% 56% 52%}50%{border-radius:56% 44% 43% 57%/52% 56% 44% 48%}}
-.hero-art .emblem{position:relative;width:300px;height:auto;z-index:2}
+.hero-art .emblem{position:relative;width:300px;height:300px;object-fit:contain;z-index:2;border-radius:50%}
 .grainbg{position:absolute;z-index:1;opacity:.9}
 
 /* ---------- section shells ---------- */
@@ -212,7 +212,7 @@ footer{background:var(--green-900);color:#cfe0d0;padding:56px 0 40px}
 <header id="site-header">
   <div class="wrap nav">
     <a class="brand" href="#top" aria-label="Amrithaha home">
-      <svg class="mark" viewBox="0 0 120 150"><use href="#amark"/></svg>
+      <img class="mark" src="Logos/amrithaha_icon_light.svg" alt="Amrithaha icon">
       <span><span class="name">Amrithaha</span><br><span class="te">అమృతః</span></span>
     </a>
     <nav class="links" id="nav-links">
@@ -256,12 +256,7 @@ footer{background:var(--green-900);color:#cfe0d0;padding:56px 0 40px}
       </div>
       <div class="hero-art" aria-hidden="true">
         <div class="blob"></div>
-        <svg class="emblem" viewBox="0 0 400 400">
-          <circle cx="200" cy="200" r="150" fill="#F7F4EA"/>
-          <g transform="translate(140 60) scale(1.0)"><use href="#amark"/></g>
-          <text x="200" y="250" text-anchor="middle" font-family="Fraunces,serif" font-size="44" font-weight="600" fill="#17552C">Amrithaha</text>
-          <text x="200" y="292" text-anchor="middle" font-family="'Noto Sans Telugu',sans-serif" font-size="30" fill="#2E8B4E">అమృతః</text>
-        </svg>
+        <img class="emblem" src="Logos/Logo.png" alt="Amrithaha logo">
       </div>
     </div>
   </section>
@@ -377,8 +372,8 @@ footer{background:var(--green-900);color:#cfe0d0;padding:56px 0 40px}
   <div class="wrap">
     <div class="foot-top">
       <div class="foot-brand">
-        <svg width="40" viewBox="0 0 120 150"><use href="#amark"/></svg>
-        <span><span class="name">Amrithaha</span><br><span class="te">అమృతః · Hyderabad</span></span>
+        <img src="Logos/amrithaha_icon_light.svg" width="40" alt="Amrithaha icon">
+        <span><span class="name">Amrithaha</span><br><span class="te">అమృతః · Madhapur</span></span>
       </div>
       <nav class="foot-links">
         <a href="#why">Why us</a><a href="#menu">The food</a><a href="#how">How it works</a>
