@@ -34,6 +34,7 @@
 | `js/supabase.js` | Client singleton |
 | `js/lib/date.js` | IST business date (pure) |
 | `js/lib/money.js` | Currency formatting (pure) |
+| `js/lib/html.js` | HTML escaping (pure) |
 | `js/lib/bill.js` | Running bill state (pure) |
 | `js/lib/summary.js` | Daily totals + top items (pure) |
 | `js/lib/csv.js` | CSV serialisation (pure) |
@@ -1606,7 +1607,7 @@ async function renderToday() {
       <div class="row"><span>Cash</span><span>${formatINR(s.cash)}</span></div>
       <div class="row"><span>Items sold</span><span>${itemsSold}</span></div>
       <div class="row"><span>Top items</span><span class="muted">${
-        top.length ? top.map((t) => `${t.name} (${t.quantity})`).join(', ') : '—'
+        top.length ? top.map((t) => `${escapeHtml(t.name)} (${t.quantity})`).join(', ') : '—'
       }</span></div>
     </div>
 
@@ -1615,7 +1616,7 @@ async function renderToday() {
       ${orders.length ? orders.map((o) => `
         <div class="row ${o.status === 'invalid' ? 'invalid' : ''}">
           <span>
-            ${o.order_type === 'catering' ? `Catering — ${o.description}` : 'Counter'}
+            ${o.order_type === 'catering' ? `Catering — ${escapeHtml(o.description)}` : 'Counter'}
             <br><span class="muted">${new Date(o.created_at).toLocaleTimeString('en-IN',
               { hour: '2-digit', minute: '2-digit' })} · ${o.payment_mode.toUpperCase()}</span>
           </span>
@@ -1744,10 +1745,10 @@ async function renderMenuTab() {
         : 'You can mark items available or sold out.'}</p>
       ${categories.map((cat) => `
         <div style="margin-top:14px">
-          <div class="muted" style="font-weight:600">${cat}</div>
+          <div class="muted" style="font-weight:600">${escapeHtml(cat)}</div>
           ${menuItems.filter((i) => i.category === cat).map((i) => `
             <div class="row">
-              <span>${i.name}<br><span class="muted">${formatINR(i.price)}</span></span>
+              <span>${escapeHtml(i.name)}<br><span class="muted">${formatINR(i.price)}</span></span>
               <span style="display:flex;gap:8px;align-items:center">
                 ${isOwner ? `<button class="btn-ghost edit" data-id="${i.id}"
                      style="padding:8px 12px;font-size:.85rem">Edit</button>` : ''}
@@ -1981,6 +1982,7 @@ git commit -m "feat: add owner-only CSV export"
 ```js
 import { listMenuItems } from './db.js';
 import { formatINR } from './lib/money.js';
+import { escapeHtml } from './lib/html.js';
 
 const CATEGORY_ORDER = ['Breakfast', 'Lunch', 'Drinks', 'Shelf'];
 
@@ -1993,10 +1995,10 @@ try {
   } else {
     const cats = CATEGORY_ORDER.filter((c) => items.some((i) => i.category === c));
     root.innerHTML = cats.map((cat) => `
-      <div class="cat">${cat}</div>
+      <div class="cat">${escapeHtml(cat)}</div>
       <div class="card">
         ${items.filter((i) => i.category === cat).map((i) => `
-          <div class="row"><span>${i.name}</span><strong>${formatINR(i.price)}</strong></div>
+          <div class="row"><span>${escapeHtml(i.name)}</span><strong>${formatINR(i.price)}</strong></div>
         `).join('')}
       </div>`).join('');
   }
