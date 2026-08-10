@@ -1,4 +1,5 @@
 import { signIn, signOut, getSession, getRole } from './auth.js';
+import { supabase } from './supabase.js';
 import * as db from './db.js';
 import { addLine, changeQty, removeLine, billTotal } from './lib/bill.js';
 import { formatINR } from './lib/money.js';
@@ -50,7 +51,7 @@ function selectTab(name) {
   $('tab-menu').classList.toggle('hidden', isOrders);
 }
 $('tab-orders-btn').addEventListener('click', () => selectTab('orders'));
-$('tab-menu-btn').addEventListener('click', () => selectTab('menu'));
+$('tab-menu-btn').addEventListener('click', () => { selectTab('menu'); renderMenuTab(); });
 
 render();
 
@@ -208,6 +209,7 @@ export async function renderOrdersTab() {
 document.addEventListener('admin:ready', async () => {
   menuItems = await db.listMenuItems();
   await renderOrdersTab();
+  await renderMenuTab();
 });
 
 async function renderToday() {
@@ -278,4 +280,83 @@ async function invalidate(orderId) {
   // order invalid must not strip the Undo affordance from the latest sale.
   if (isUndo) lastOrderId = null;
   await renderToday();
+}
+
+async function renderMenuTab() {
+  menuItems = await db.listMenuItems();
+  const isOwner = state.role === 'owner';
+  const categories = [...new Set(menuItems.map((i) => i.category))];
+
+  document.getElementById('tab-menu').innerHTML = `
+    ${isOwner ? `
+      <div class="card">
+        <h3>Add item</h3>
+        <label for="mi-name">Name</label><input id="mi-name">
+        <label for="mi-cat">Category</label>
+        <select id="mi-cat">
+          <option>Breakfast</option><option>Lunch</option>
+          <option>Drinks</option><option>Shelf</option>
+        </select>
+        <label for="mi-price">Price</label>
+        <input id="mi-price" type="number" inputmode="decimal" min="0">
+        <div style="margin-top:14px"><button class="btn-primary" id="mi-save">Add item</button></div>
+        <p class="err hidden" id="mi-error"></p>
+      </div>` : ''}
+
+    <div class="card">
+      <h3>Menu</h3>
+      <p class="muted">${isOwner
+        ? 'Toggle availability, or edit price and name.'
+        : 'You can mark items available or sold out.'}</p>
+      ${categories.map((cat) => `
+        <div style="margin-top:14px">
+          <div class="muted" style="font-weight:600">${escapeHtml(cat)}</div>
+          ${menuItems.filter((i) => i.category === cat).map((i) => `
+            <div class="row">
+              <span>${escapeHtml(i.name)}<br><span class="muted">${formatINR(i.price)}</span></span>
+              <span style="display:flex;gap:8px;align-items:center">
+                ${isOwner ? `<button class="btn-ghost edit" data-id="${i.id}"
+                     style="padding:8px 12px;font-size:.85rem">Edit</button>` : ''}
+                <button class="btn-ghost avail" data-id="${i.id}" data-on="${i.is_available}"
+                        style="padding:8px 12px;font-size:.85rem">
+                  ${i.is_available ? 'Available' : 'Sold out'}
+                </button>
+              </span>
+            </div>`).join('')}
+        </div>`).join('')}
+    </div>`;
+
+  document.querySelectorAll('.avail').forEach((b) => b.addEventListener('click', async () => {
+    await db.setAvailability(b.dataset.id, b.dataset.on !== 'true');
+    await renderMenuTab();
+    await renderOrdersTab();
+  }));
+
+  if (!isOwner) return;
+
+  document.querySelectorAll('.edit').forEach((b) => b.addEventListener('click', async () => {
+    const item = menuItems.find((i) => i.id === b.dataset.id);
+    const name = prompt('Name', item.name);
+    if (name === null) return;
+    const price = prompt('Price', item.price);
+    if (price === null) return;
+    const { error } = await supabase.from('menu_items')
+      .update({ name: name.trim(), price: Number(price) }).eq('id', item.id);
+    if (error) { alert(error.message); return; }
+    await renderMenuTab();
+    await renderOrdersTab();
+  }));
+
+  document.getElementById('mi-save').addEventListener('click', async () => {
+    const err = document.getElementById('mi-error');
+    err.classList.add('hidden');
+    const { error } = await supabase.from('menu_items').insert({
+      name: document.getElementById('mi-name').value.trim(),
+      category: document.getElementById('mi-cat').value,
+      price: Number(document.getElementById('mi-price').value),
+    });
+    if (error) { err.textContent = error.message; err.classList.remove('hidden'); return; }
+    await renderMenuTab();
+    await renderOrdersTab();
+  });
 }
