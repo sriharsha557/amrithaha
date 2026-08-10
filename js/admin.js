@@ -395,7 +395,7 @@ async function renderMenuTab() {
       await renderMenuTab();
       await renderOrdersTab();
     } catch (e) {
-      alert('Could not update that order. Check your connection and try again.');
+      alert('Could not update that item. Check your connection and try again.');
     }
   }));
 

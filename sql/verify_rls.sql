@@ -16,8 +16,10 @@
 --
 -- WHY COUNTS RATHER THAN EXCEPTIONS
 --   For SELECT and UPDATE, RLS denies by returning or affecting zero rows; it
---   does not raise. Only INSERT raises (insufficient_privilege), because the
---   WITH CHECK clause is violated. The assertions below match those semantics.
+--   does not raise. INSERT is the one case that raises insufficient_privilege
+--   -- either because a WITH CHECK clause is violated (menu_items) or because
+--   the table has no INSERT policy at all (orders). The assertions below match
+--   those semantics.
 
 begin;
 
@@ -217,21 +219,26 @@ end $$;
 --     This is staff's write path for recording a sale. Total is re-derived
 --     server-side (100 x 2 = 200), re-proving prices come from the server.
 do $$
-declare n int;
+declare v_id uuid; v_total numeric;
 begin
   set local role authenticated;
   perform set_config('request.jwt.claims',
     json_build_object('sub', (select staff_uuid from _v),
                       'role', 'authenticated')::text, true);
-  perform public.create_counter_order('cash',
+  -- Capture the id. A table-wide count would raise a false FAIL on any
+  -- database that already holds an unrelated 200-rupee counter bill.
+  select public.create_counter_order('cash',
     jsonb_build_array(jsonb_build_object(
       'menu_item_id', 'dddddddd-0000-0000-0000-000000000001',
-      'quantity', 2)));
+      'quantity', 2))) into v_id;
   reset role;
-  select count(*) into n from public.orders
-   where order_type = 'counter' and total_amount = 200;
-  if n <> 1 then
-    raise exception 'FAIL: create_counter_order did not produce an order with total_amount 200 (saw % matching row(s))', n;
+  if v_id is null then
+    raise exception 'FAIL: create_counter_order returned no order id';
+  end if;
+  select total_amount into v_total from public.orders where id = v_id;
+  if v_total <> 200 then
+    raise exception
+      'FAIL: create_counter_order produced total_amount %, expected 200 (100 x 2 read from menu_items)', v_total;
   end if;
   raise notice 'PASS: staff can call create_counter_order';
 end $$;
