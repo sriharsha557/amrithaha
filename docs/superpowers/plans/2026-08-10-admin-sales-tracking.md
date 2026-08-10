@@ -71,7 +71,7 @@ This exists only so Node treats `js/lib/*.js` as ES modules during tests. GitHub
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/"
+    "test": "node --test"
   }
 }
 ```
