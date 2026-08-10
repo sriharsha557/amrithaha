@@ -1925,6 +1925,18 @@ function renderExport() {
 
 Call `renderExport()` at the end of `renderOrdersTab()`.
 
+> **Superseded by commit `5c9add5`.** The snippets above were hardened during
+> review and the shipped `js/db.js` / `js/admin.js` are authoritative for this
+> task. Four changes: `exportRange` now paginates with `.range()` in pages of
+> 1000 ordered by `created_at, id` (an unbounded select is silently capped by
+> PostgREST, which would drop rows from the only backup this system has);
+> `js/lib/csv.js` prefixes strings that begin with `=`, `+`, `-`, `@`, tab or CR
+> with an apostrophe so a menu name cannot execute as a spreadsheet formula,
+> while numbers pass through untouched so negatives stay numeric; the export
+> handler has try/catch with a visible `#ex-error` message and a disabled
+> button while running; and blank or inverted date ranges are rejected before
+> the query runs.
+
 - [ ] **Step 3: Verify the export**
 
 1. As owner, export today. A CSV downloads.
