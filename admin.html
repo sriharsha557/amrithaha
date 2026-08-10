@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Amrithaha Admin</title>
+<link rel="icon" href="Logos/amrithaha_icon_light.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<div class="wrap">
+
+  <section id="login-view">
+    <h1>Amrithaha</h1>
+    <p class="muted">Sign in to log sales.</p>
+    <div class="card" style="margin-top:16px">
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="username">
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password">
+      <div style="margin-top:16px"><button class="btn-primary" id="login-btn">Sign in</button></div>
+      <p class="err hidden" id="login-error"></p>
+    </div>
+  </section>
+
+  <section id="app-view" class="hidden">
+    <div class="topbar">
+      <h2>Amrithaha</h2>
+      <div>
+        <span class="badge" id="role-badge"></span>
+        <button class="btn-ghost" id="logout-btn" style="padding:8px 12px;font-size:.85rem">Sign out</button>
+      </div>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button id="tab-orders-btn" role="tab" aria-selected="true">Orders</button>
+      <button id="tab-menu-btn"   role="tab" aria-selected="false">Menu</button>
+    </div>
+
+    <div id="tab-orders"></div>
+    <div id="tab-menu" class="hidden"></div>
+  </section>
+
+</div>
+
+<script type="module" src="js/admin.js"></script>
+</body>
+</html>
