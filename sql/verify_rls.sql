@@ -5,7 +5,7 @@
 --      Supabase -> Authentication -> Users.
 --   2. Paste this ENTIRE file into the Supabase SQL editor and run it once.
 --      It seeds fixtures, asserts, and rolls everything back at the end.
---   3. Expect nine PASS notices and no exception. Any FAIL means the
+--   3. Expect thirteen PASS notices and no exception. Any FAIL means the
 --      deployment is misconfigured -- stop and fix it before going live.
 --
 -- WHY FIXTURES
@@ -156,9 +156,30 @@ begin
   raise notice 'PASS: orders cannot be deleted';
 end $$;
 
+-- 7. staff cannot insert directly into orders
+--    This is the actual attack: forging a bill with an arbitrary amount.
+--    With no INSERT policy on the table, Postgres raises insufficient_privilege.
+do $$
+begin
+  set local role authenticated;
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', (select staff_uuid from _v),
+                      'role', 'authenticated')::text, true);
+  begin
+    insert into public.orders (order_type, total_amount, payment_mode)
+    values ('counter', 1, 'cash');
+    reset role;
+    raise exception 'FAIL: staff inserted an order directly';
+  exception
+    when insufficient_privilege then
+      reset role;
+      raise notice 'PASS: staff cannot insert directly into orders';
+  end;
+end $$;
+
 -- ============ must SUCCEED ============
 
--- 7. anonymous can read the menu
+-- 8. anonymous can read the menu
 do $$
 declare n int;
 begin
@@ -171,9 +192,9 @@ begin
   raise notice 'PASS: anon read % menu item(s)', n;
 end $$;
 
--- 8. the owner CAN change an order amount.
+-- 9. the owner CAN change an order amount.
 --    Positive control: without this, a deny-everyone misconfiguration would
---    pass assertions 1-6 while leaving the app unusable.
+--    pass assertions 1-7 while leaving the app unusable.
 do $$
 declare n int;
 begin
@@ -190,6 +211,65 @@ begin
       'FAIL: owner updated % order row(s), expected 1 - check the profiles row for the owner UUID', n;
   end if;
   raise notice 'PASS: owner can update order amounts';
+end $$;
+
+-- 10. staff can call create_counter_order
+--     This is staff's write path for recording a sale. Total is re-derived
+--     server-side (100 x 2 = 200), re-proving prices come from the server.
+do $$
+declare n int;
+begin
+  set local role authenticated;
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', (select staff_uuid from _v),
+                      'role', 'authenticated')::text, true);
+  perform public.create_counter_order('cash',
+    jsonb_build_array(jsonb_build_object(
+      'menu_item_id', 'dddddddd-0000-0000-0000-000000000001',
+      'quantity', 2)));
+  reset role;
+  select count(*) into n from public.orders
+   where order_type = 'counter' and total_amount = 200;
+  if n <> 1 then
+    raise exception 'FAIL: create_counter_order did not produce an order with total_amount 200 (saw % matching row(s))', n;
+  end if;
+  raise notice 'PASS: staff can call create_counter_order';
+end $$;
+
+-- 11. staff can call mark_order_invalid
+do $$
+declare s text;
+begin
+  set local role authenticated;
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', (select staff_uuid from _v),
+                      'role', 'authenticated')::text, true);
+  perform public.mark_order_invalid('dddddddd-0000-0000-0000-000000000002');
+  reset role;
+  select status into s from public.orders
+   where id = 'dddddddd-0000-0000-0000-000000000002';
+  if s <> 'invalid' then
+    raise exception 'FAIL: order status is %, expected invalid', s;
+  end if;
+  raise notice 'PASS: staff can call mark_order_invalid';
+end $$;
+
+-- 12. staff can call set_item_availability
+do $$
+declare a boolean;
+begin
+  set local role authenticated;
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', (select staff_uuid from _v),
+                      'role', 'authenticated')::text, true);
+  perform public.set_item_availability('dddddddd-0000-0000-0000-000000000001', false);
+  reset role;
+  select is_available into a from public.menu_items
+   where id = 'dddddddd-0000-0000-0000-000000000001';
+  if a <> false then
+    raise exception 'FAIL: menu item is_available is %, expected false', a;
+  end if;
+  raise notice 'PASS: staff can call set_item_availability';
 end $$;
 
 rollback;

@@ -304,6 +304,7 @@ async function renderToday() {
               : '<span class="muted">invalid</span>'}
           </span>
         </div>`).join('') : '<p class="muted">No orders yet today.</p>'}
+      <p class="err hidden" id="today-error"></p>
     </div>`;
 
   document.querySelectorAll('.invalidate').forEach((b) => {
@@ -315,25 +316,33 @@ async function renderToday() {
  *  the order's lines into the entry form so the correction is one tap away.
  *  Nothing is ever deleted. */
 async function invalidate(orderId) {
-  const isUndo = orderId === lastOrderId;
-  const reload = isUndo ? await db.orderLines(orderId) : [];
-  await db.markInvalid(orderId);
-  if (isUndo && reload.length) {
-    orderType = 'counter';
-    lines = reload.map((r) => ({
-      menu_item_id: r.menu_item_id,
-      name: r.item_name,
-      price: Number(r.unit_price),
-      quantity: r.quantity,
-    }));
-    lastOrderId = null;
-    await renderOrdersTab();
-    return;
+  try {
+    const isUndo = orderId === lastOrderId;
+    const reload = isUndo ? await db.orderLines(orderId) : [];
+    await db.markInvalid(orderId);
+    if (isUndo && reload.length) {
+      orderType = 'counter';
+      lines = reload.map((r) => ({
+        menu_item_id: r.menu_item_id,
+        name: r.item_name,
+        price: Number(r.unit_price),
+        quantity: r.quantity,
+      }));
+      lastOrderId = null;
+      await renderOrdersTab();
+      return;
+    }
+    // Only clear when the undone order WAS the newest one. Marking an older
+    // order invalid must not strip the Undo affordance from the latest sale.
+    if (isUndo) lastOrderId = null;
+    await renderToday();
+  } catch (e) {
+    const err = document.getElementById('today-error');
+    if (err) {
+      err.textContent = 'Could not update that order. Check your connection and try again.';
+      err.classList.remove('hidden');
+    }
   }
-  // Only clear when the undone order WAS the newest one. Marking an older
-  // order invalid must not strip the Undo affordance from the latest sale.
-  if (isUndo) lastOrderId = null;
-  await renderToday();
 }
 
 async function renderMenuTab() {
@@ -381,9 +390,13 @@ async function renderMenuTab() {
     </div>`;
 
   document.querySelectorAll('.avail').forEach((b) => b.addEventListener('click', async () => {
-    await db.setAvailability(b.dataset.id, b.dataset.on !== 'true');
-    await renderMenuTab();
-    await renderOrdersTab();
+    try {
+      await db.setAvailability(b.dataset.id, b.dataset.on !== 'true');
+      await renderMenuTab();
+      await renderOrdersTab();
+    } catch (e) {
+      alert('Could not update that order. Check your connection and try again.');
+    }
   }));
 
   if (!isOwner) return;
@@ -392,14 +405,21 @@ async function renderMenuTab() {
     const item = menuItems.find((i) => i.id === b.dataset.id);
     const name = prompt('Name', item.name);
     if (name === null) return;
+    const category = prompt('Category (Breakfast, Lunch, Drinks or Shelf)', item.category);
+    if (category === null) return;
     const price = prompt('Price', item.price);
     if (price === null) return;
     const trimmedName = name.trim();
     const amount = parseAmount(price);
     if (!trimmedName) { alert('Enter a valid name.'); return; }
+    const allowedCategories = ['Breakfast', 'Lunch', 'Drinks', 'Shelf'];
+    if (!allowedCategories.includes(category)) {
+      alert('Category must be Breakfast, Lunch, Drinks or Shelf.');
+      return;
+    }
     if (amount === null) { alert('Enter a valid price.'); return; }
     const { error } = await supabase.from('menu_items')
-      .update({ name: trimmedName, price: amount }).eq('id', item.id);
+      .update({ name: trimmedName, category, price: amount }).eq('id', item.id);
     if (error) { alert(error.message); return; }
     await renderMenuTab();
     await renderOrdersTab();
