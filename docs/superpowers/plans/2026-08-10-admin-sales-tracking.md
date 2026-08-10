@@ -1034,7 +1034,7 @@ export function toCsv(rows, columns) {
 - [ ] **Step 4: Run the tests to verify they pass**
 
 Run: `npm test`
-Expected: PASS — 18 tests, 0 failures.
+Expected: PASS — 18 tests, 0 failures. (Grows to 41 as later tasks add html, amount and csv coverage.)
 
 - [ ] **Step 5: Commit**
 
@@ -2115,7 +2115,7 @@ Run `sql/verify_rls.sql`. All nine assertions must pass.
 ```bash
 npm test
 ```
-Expected: 18 tests pass.
+Expected: 41 tests pass.
 
 Then run `sql/verify_rls.sql` in Supabase. Expected: nine `PASS:` notices, no exception.
 
