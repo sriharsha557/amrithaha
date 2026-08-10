@@ -3,6 +3,7 @@ import * as db from './db.js';
 import { addLine, changeQty, removeLine, billTotal } from './lib/bill.js';
 import { formatINR } from './lib/money.js';
 import { escapeHtml } from './lib/html.js';
+import { summarise, topItems } from './lib/summary.js';
 
 const $ = (id) => document.getElementById(id);
 export const state = { role: null };
@@ -57,6 +58,7 @@ let menuItems = [];
 let lines = [];
 let orderType = 'counter';
 let paymentMode = 'cash';
+let lastOrderId = null;
 
 function entryHtml() {
   return `
@@ -90,7 +92,9 @@ function entryHtml() {
 
       <button class="btn-primary" id="save-order">Save order</button>
       <p class="err hidden" id="order-error"></p>
-    </div>`;
+    </div>
+
+    <div id="today"></div>`;
 }
 
 function renderItemButtons() {
@@ -167,7 +171,8 @@ async function saveOrder() {
   try {
     if (orderType === 'counter') {
       if (!lines.length) throw new Error('Add at least one item.');
-      await db.createCounterOrder(paymentMode, lines);
+      const id = await db.createCounterOrder(paymentMode, lines);
+      lastOrderId = id;
       lines = [];
     } else {
       const description = document.getElementById('cat-desc').value.trim();
@@ -176,7 +181,7 @@ async function saveOrder() {
       if (rawAmount === '') throw new Error('Enter the catering amount.');
       const amount = Number(rawAmount);
       if (!Number.isFinite(amount) || amount < 0) throw new Error('Enter a valid amount.');
-      await db.createCateringOrder({
+      lastOrderId = await db.createCateringOrder({
         description, amount, paymentMode,
         customerName:  document.getElementById('cat-name').value.trim(),
         customerPhone: document.getElementById('cat-phone').value.trim(),
@@ -197,9 +202,78 @@ export async function renderOrdersTab() {
   document.getElementById('tab-orders').innerHTML = entryHtml();
   wireEntry();
   if (orderType === 'counter') { renderItemButtons(); renderBill(); }
+  await renderToday();
 }
 
 document.addEventListener('admin:ready', async () => {
   menuItems = await db.listMenuItems();
   await renderOrdersTab();
 });
+
+async function renderToday() {
+  const [orders, items] = await Promise.all([
+    db.listTodayOrders(), db.listTodayOrderItems(),
+  ]);
+  const s = summarise(orders);
+  const top = topItems(items, 3);
+  const itemsSold = items.reduce((n, i) => n + Number(i.quantity), 0);
+
+  document.getElementById('today').innerHTML = `
+    <div class="card">
+      <h3>Today</h3>
+      <div class="row"><span>Orders</span><strong>${s.count}</strong></div>
+      <div class="row"><span>Revenue</span><strong>${formatINR(s.revenue)}</strong></div>
+      <div class="row"><span>UPI</span><span>${formatINR(s.upi)}</span></div>
+      <div class="row"><span>Cash</span><span>${formatINR(s.cash)}</span></div>
+      <div class="row"><span>Items sold</span><span>${itemsSold}</span></div>
+      <div class="row"><span>Top items</span><span class="muted">${
+        top.length ? top.map((t) => `${escapeHtml(t.name)} (${t.quantity})`).join(', ') : '—'
+      }</span></div>
+    </div>
+
+    <div class="card">
+      <h3>Today's orders</h3>
+      ${orders.length ? orders.map((o) => `
+        <div class="row ${o.status === 'invalid' ? 'invalid' : ''}">
+          <span>
+            ${o.order_type === 'catering' ? `Catering — ${escapeHtml(o.description)}` : 'Counter'}
+            <br><span class="muted">${new Date(o.created_at).toLocaleTimeString('en-IN',
+              { hour: '2-digit', minute: '2-digit' })} · ${o.payment_mode.toUpperCase()}</span>
+          </span>
+          <span style="display:flex;align-items:center;gap:10px">
+            <strong>${formatINR(o.total_amount)}</strong>
+            ${o.status === 'valid'
+              ? `<button class="btn-danger invalidate" data-id="${o.id}">${
+                   o.id === lastOrderId ? 'Undo' : 'Mark invalid'}</button>`
+              : '<span class="muted">invalid</span>'}
+          </span>
+        </div>`).join('') : '<p class="muted">No orders yet today.</p>'}
+    </div>`;
+
+  document.querySelectorAll('.invalidate').forEach((b) => {
+    b.addEventListener('click', () => invalidate(b.dataset.id));
+  });
+}
+
+/** Undo and Mark invalid are the same operation. Undo additionally reloads
+ *  the order's lines into the entry form so the correction is one tap away.
+ *  Nothing is ever deleted. */
+async function invalidate(orderId) {
+  const isUndo = orderId === lastOrderId;
+  const reload = isUndo ? await db.orderLines(orderId) : [];
+  await db.markInvalid(orderId);
+  if (isUndo && reload.length) {
+    orderType = 'counter';
+    lines = reload.map((r) => ({
+      menu_item_id: r.menu_item_id,
+      name: r.item_name,
+      price: Number(r.unit_price),
+      quantity: r.quantity,
+    }));
+    lastOrderId = null;
+    await renderOrdersTab();
+    return;
+  }
+  lastOrderId = null;
+  await renderToday();
+}
