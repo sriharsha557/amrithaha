@@ -11,7 +11,14 @@ try {
   if (!items.length) {
     root.innerHTML = '<p class="muted">Menu is being updated. Please call us.</p>';
   } else {
-    const cats = CATEGORY_ORDER.filter((c) => items.some((i) => i.category === c));
+    // Known categories first, in menu order. Anything else goes last rather
+    // than being dropped: if a category is ever added to the database without
+    // being added here, the items must still reach the customer.
+    const present = [...new Set(items.map((i) => i.category))];
+    const cats = [
+      ...CATEGORY_ORDER.filter((c) => present.includes(c)),
+      ...present.filter((c) => !CATEGORY_ORDER.includes(c)).sort(),
+    ];
     root.innerHTML = cats.map((cat) => `
       <div class="cat">${escapeHtml(cat)}</div>
       <div class="card">
