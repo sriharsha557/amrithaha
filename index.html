@@ -6,6 +6,9 @@
 <title>Amrithaha — Healthy Food That Actually Tastes Good · Madhapur</title>
 <meta name="description" content="Millet-based breakfast, lunch and healthy products in Madhapur, Hyderabad. Freshly prepared daily — no maida, low oil, fresh ingredients. Now open on 100ft Road.">
 
+<link rel="icon" href="Logos/amrithaha_icon_light.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="Logos/amrithaha.svg">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Poppins:wght@400;500;600;700&family=Noto+Sans+Telugu:wght@400;600;700&display=swap" rel="stylesheet">
@@ -53,6 +56,8 @@ header.scrolled{border-color:#e3dcc9;box-shadow:0 8px 24px -20px rgba(0,0,0,.4)}
 .links{display:flex;align-items:center;gap:32px}
 .links a{font-weight:500;color:var(--ink);font-size:.98rem}
 .links a:hover{color:var(--green-500)}
+.links a.btn-green,.links a.btn-green:hover{color:#fff}
+.links a.btn-gold,.links a.btn-gold:hover{color:var(--ink)}
 .nav .btn{padding:11px 20px;font-size:.95rem}
 .menu-btn{display:none;background:none;border:0;cursor:pointer;padding:8px}
 .menu-btn span{display:block;width:26px;height:2.5px;background:var(--green-700);margin:5px 0;border-radius:2px;transition:.25s}
@@ -79,7 +84,8 @@ header.scrolled{border-color:#e3dcc9;box-shadow:0 8px 24px -20px rgba(0,0,0,.4)}
   radial-gradient(circle at 30% 30%, #3a9a58, var(--green-700));border-radius:46% 54% 55% 45%/48% 44% 56% 52%;
   filter:drop-shadow(0 30px 50px rgba(23,85,44,.35));animation:morph 12s ease-in-out infinite}
 @keyframes morph{0%,100%{border-radius:46% 54% 55% 45%/48% 44% 56% 52%}50%{border-radius:56% 44% 43% 57%/52% 56% 44% 48%}}
-.hero-art .emblem{position:relative;width:300px;height:300px;object-fit:contain;z-index:2;border-radius:50%}
+.hero-art .emblem{position:relative;width:300px;height:300px;object-fit:contain;z-index:2;border-radius:50%;
+  filter:drop-shadow(0 16px 30px rgba(18,63,33,.32))}
 .grainbg{position:absolute;z-index:1;opacity:.9}
 
 /* ---------- section shells ---------- */
@@ -308,7 +314,7 @@ footer{background:var(--green-900);color:#cfe0d0;padding:56px 0 40px}
       </div>
       <div class="hero-art" aria-hidden="true">
         <div class="blob"></div>
-        <img class="emblem" src="Logos/Logo.png" alt="Amrithaha logo">
+        <img class="emblem" src="Logos/amrithaha.svg" alt="Amrithaha — అమృతః" width="400" height="400">
       </div>
     </div>
   </section>
