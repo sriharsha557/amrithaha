@@ -6,9 +6,39 @@ import { formatINR } from './lib/money.js';
 import { parseAmount } from './lib/amount.js';
 import { escapeHtml } from './lib/html.js';
 import { summarise, topItems } from './lib/summary.js';
+import { toCsv } from './lib/csv.js';
+import { istBusinessDate } from './lib/date.js';
 
 const $ = (id) => document.getElementById(id);
 export const state = { role: null };
+
+const EXPORT_COLUMNS = ['date','time','type','description','item','unit_price',
+                        'quantity','line_total','order_total','payment','status'];
+
+function renderExport() {
+  if (state.role !== 'owner') return;
+  const today = istBusinessDate();
+  document.getElementById('tab-orders').insertAdjacentHTML('beforeend', `
+    <div class="card">
+      <h3>Export</h3>
+      <label for="ex-from">From</label><input id="ex-from" type="date" value="${today}">
+      <label for="ex-to">To</label><input id="ex-to" type="date" value="${today}">
+      <div style="margin-top:14px"><button class="btn-gold" id="ex-go"
+           style="width:100%">Download CSV</button></div>
+    </div>`);
+
+  document.getElementById('ex-go').addEventListener('click', async () => {
+    const from = document.getElementById('ex-from').value;
+    const to   = document.getElementById('ex-to').value;
+    const rows = await db.exportRange(from, to);
+    const blob = new Blob([toCsv(rows, EXPORT_COLUMNS)], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `amrithaha-${from}-to-${to}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+}
 
 async function render() {
   const session = await getSession();
@@ -203,6 +233,7 @@ export async function renderOrdersTab() {
   wireEntry();
   if (orderType === 'counter') { renderItemButtons(); renderBill(); }
   await renderToday();
+  renderExport();
 }
 
 document.addEventListener('admin:ready', async () => {

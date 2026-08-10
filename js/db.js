@@ -68,3 +68,35 @@ export async function setAvailability(itemId, available) {
   });
   if (error) throw error;
 }
+
+export async function exportRange(from, to) {
+  const { data, error } = await supabase
+    .from('orders')
+    .select('business_date, created_at, order_type, description, total_amount, payment_mode, status, order_items(item_name, unit_price, quantity, line_total)')
+    .gte('business_date', from).lte('business_date', to)
+    .order('created_at');
+  if (error) throw error;
+
+  // One CSV row per line item; catering orders emit a single row.
+  const rows = [];
+  for (const o of data) {
+    const base = {
+      date: o.business_date,
+      time: new Date(o.created_at).toLocaleTimeString('en-IN'),
+      type: o.order_type,
+      description: o.description || '',
+      payment: o.payment_mode,
+      status: o.status,
+      order_total: o.total_amount,
+    };
+    if (o.order_items?.length) {
+      for (const i of o.order_items) {
+        rows.push({ ...base, item: i.item_name, unit_price: i.unit_price,
+                    quantity: i.quantity, line_total: i.line_total });
+      }
+    } else {
+      rows.push({ ...base, item: '', unit_price: '', quantity: '', line_total: '' });
+    }
+  }
+  return rows;
+}
