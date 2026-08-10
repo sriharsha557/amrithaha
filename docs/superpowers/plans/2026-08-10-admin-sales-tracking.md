@@ -756,6 +756,7 @@ git commit -m "feat: add starting menu seed data"
 **Files:**
 - Create: `js/lib/date.js`, `js/lib/money.js`, `js/lib/bill.js`, `js/lib/summary.js`, `js/lib/csv.js`
 - Test: `tests/date.test.js`, `tests/bill.test.js`, `tests/summary.test.js`, `tests/csv.test.js`
+- Note: `js/lib/html.js` and `tests/html.test.js` were added during Task 7; they follow the same purity rule as the modules here.
 
 **Interfaces:**
 - Consumes: nothing — these modules import nothing and touch no DOM
@@ -1379,6 +1380,7 @@ export async function setAvailability(itemId, available) {
 import * as db from './db.js';
 import { addLine, changeQty, removeLine, billTotal } from './lib/bill.js';
 import { formatINR } from './lib/money.js';
+import { escapeHtml } from './lib/html.js';
 
 let menuItems = [];
 let lines = [];
@@ -1425,12 +1427,12 @@ function renderItemButtons() {
   const categories = [...new Set(available.map((i) => i.category))];
   document.getElementById('item-buttons').innerHTML = categories.map((cat) => `
     <div style="margin-bottom:10px">
-      <div class="muted" style="font-weight:600;margin-bottom:6px">${cat}</div>
+      <div class="muted" style="font-weight:600;margin-bottom:6px">${escapeHtml(cat)}</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px">
         ${available.filter((i) => i.category === cat).map((i) => `
           <button class="btn-ghost add-item" data-id="${i.id}"
                   style="padding:10px 14px;font-size:.9rem">
-            ${i.name} <span class="muted">${formatINR(i.price)}</span>
+            ${escapeHtml(i.name)} <span class="muted">${formatINR(i.price)}</span>
           </button>`).join('')}
       </div>
     </div>`).join('');
@@ -1449,7 +1451,7 @@ function renderBill() {
   if (!lines.length) { el.innerHTML = '<p class="muted">No items yet.</p>'; return; }
   el.innerHTML = lines.map((l) => `
     <div class="row">
-      <span>${l.name}<br><span class="muted">${formatINR(l.price)}</span></span>
+      <span>${escapeHtml(l.name)}<br><span class="muted">${formatINR(l.price)}</span></span>
       <span style="display:flex;align-items:center;gap:10px">
         <button class="btn-ghost qty" data-id="${l.menu_item_id}" data-d="-1" style="padding:6px 12px">-</button>
         <strong>${l.quantity}</strong>
@@ -1498,9 +1500,12 @@ async function saveOrder() {
       lines = [];
     } else {
       const description = document.getElementById('cat-desc').value.trim();
-      const amount = Number(document.getElementById('cat-amount').value);
+      const rawAmount = document.getElementById('cat-amount').value.trim();
       if (!description) throw new Error('Describe the catering order.');
-      if (!(amount >= 0)) throw new Error('Enter a valid amount.');
+      // Number('') is 0, so a blank field would otherwise book a zero-rupee sale.
+      if (rawAmount === '') throw new Error('Enter the catering amount.');
+      const amount = Number(rawAmount);
+      if (!Number.isFinite(amount) || amount < 0) throw new Error('Enter a valid amount.');
       await db.createCateringOrder({
         description, amount, paymentMode,
         customerName:  document.getElementById('cat-name').value.trim(),
