@@ -27,10 +27,12 @@ Both roles log orders. Only the owner changes money or the menu.
 
 - Log counter orders as bills with multiple line items
 - Log catering orders as a description plus a value
+- Correct a bill freely before saving; undo immediately after saving
 - Mark a wrong transaction invalid (nobody deletes)
-- Daily dashboard: order count, revenue, cash/UPI split
+- Daily dashboard: order count, revenue, cash/UPI split, items sold, top items
 - Menu CRUD with an availability toggle
 - Public menu page driven by the same data
+- CSV export of a date range
 
 **Out of scope**
 
@@ -39,6 +41,20 @@ Both roles log orders. Only the owner changes money or the menu.
 - Notifications
 - Offline queueing
 - Historical reporting beyond the current day (deferred, not designed against)
+- **GST invoicing and billing compliance.** This system records sales for the
+  owner's own visibility. It is not a compliant invoicing system, does not
+  produce tax invoices, and should not be treated as the books of record for
+  filing. If GST invoicing becomes necessary, that is a separate system with its
+  own legal requirements — not an extension of this one.
+
+**Deferred, not rejected**
+
+- *Repeat last order.* Optimises a problem not yet observed, and adds persistent
+  state to the fastest path in the app. Revisit after a week of real orders shows
+  whether the same bill genuinely recurs.
+- *Item-level reporting.* `order_items` already snapshots everything needed for
+  best-selling items and a breakfast-versus-lunch split. This needs no schema
+  change when the time comes — only queries and screens.
 
 ## Success criteria
 
@@ -111,6 +127,8 @@ One row per customer bill.
 | `business_date` | date | NOT NULL, IST — see below |
 | `order_type` | text | NOT NULL, `counter` or `catering` |
 | `description` | text | catering only; NULL for counter |
+| `customer_name` | text | optional, catering only |
+| `customer_phone` | text | optional, catering only |
 | `total_amount` | numeric(10,2) | NOT NULL, CHECK >= 0 |
 | `payment_mode` | text | NOT NULL, `cash` or `upi` |
 | `status` | text | NOT NULL, default `valid`; `valid` or `invalid` |
@@ -120,6 +138,11 @@ One row per customer bill.
 
 A CHECK constraint enforces the shape of each type: `counter` orders must have a
 NULL `description`, `catering` orders must have a non-NULL one.
+
+`customer_name` and `customer_phone` are optional and used only for catering, so
+a booking can be traced back to who it was for. They are personal data; the
+`orders` table is unreadable to anonymous users, and they are the only columns
+here that would matter in a leak.
 
 ### `order_items`
 
@@ -161,22 +184,39 @@ against.
 | Add counter order | yes | yes |
 | Add catering order | yes | yes |
 | Mark transaction invalid | yes | yes |
+| Undo the order just saved | yes | yes |
 | Edit an amount | no | yes |
 | Delete a transaction | no | no |
-| Add / edit menu items | no | yes |
+| Toggle item availability | yes | yes |
+| Add / edit / price menu items | no | yes |
 | See daily totals | yes | yes |
+| Export CSV | no | yes |
 
-Staff hold **no UPDATE grant on `orders` at all**. "Mark invalid" is a
-`SECURITY DEFINER` function, `mark_order_invalid(p_order_id uuid)`, whose only
-effect is setting `status = 'invalid'` and stamping `invalidated_at`. Because
-staff have no other write path to an existing row, the restriction cannot be
-bypassed by crafting a request by hand — it is not a hidden button.
+Staff hold **no UPDATE grant on `orders` or `menu_items` at all**. Their two
+permitted changes to existing rows go through `SECURITY DEFINER` functions, each
+of which can do exactly one thing:
+
+- `mark_order_invalid(p_order_id uuid)` — sets `status = 'invalid'` and stamps
+  `invalidated_at`. Nothing else.
+- `set_item_availability(p_item_id uuid, p_available boolean)` — sets
+  `is_available`. Cannot touch name, price or category.
+
+This function-only pattern is why the restrictions are enforceable rather than
+cosmetic. RLS cannot express "you may update this column but not that one", so
+granting staff a general UPDATE and hiding the other fields in the UI would leave
+the rule bypassable by a hand-crafted request. With no UPDATE grant at all, there
+is no such path.
+
+The availability toggle is deliberately staff-accessible: a juice selling out
+mid-service is an everyday occurrence, and routing it through the owner would
+mean the public menu is wrong for hours at a time.
 
 ## Security
 
 1. RLS enabled on every table, default deny.
 2. `menu_items` — SELECT granted to `anon` and `authenticated` (a menu is public).
-   INSERT/UPDATE/DELETE restricted to `owner`.
+   INSERT/UPDATE/DELETE restricted to `owner`; staff change availability only
+   through `set_item_availability()`.
 3. `orders`, `order_items` — no `anon` access of any kind. SELECT and INSERT for
    authenticated users; UPDATE for `owner` only; DELETE for nobody.
 4. `profiles` — a user may read their own row; only `owner` may write.
@@ -200,6 +240,29 @@ A counter bill is written as one `orders` row plus its `order_items` rows. These
 are inserted through a single `create_counter_order()` function so a bill cannot
 be half-written if the connection drops between statements.
 
+### Correcting mistakes
+
+Staff make mistakes constantly at a counter, so correction is a first-class path,
+not an exception path.
+
+**Before saving** — the running bill is fully editable. Adjust quantities, remove
+a line, switch payment mode, clear the whole bill. Nothing has been recorded, so
+nothing needs auditing.
+
+**Immediately after saving** — the just-saved order shows an **Undo** button. One
+tap marks it invalid *and* reloads its lines back into the entry form, ready to
+fix and re-save.
+
+Undo does not delete. A delete window was considered and rejected: it would
+contradict the never-delete invariant, and it would not actually solve the
+friction it targets, since a deleted bill still has to be retyped from scratch.
+Reloading the lines into the form is both faster than re-entry and leaves the
+audit trail intact — the mistake stays visible as an invalid row, with the
+correction recorded next to it.
+
+**Later** — Mark invalid, from the day's list. The row stays visible, struck
+through, out of the totals.
+
 ## Screens
 
 ### `admin.html`
@@ -211,15 +274,25 @@ Mobile-first, one thumb, no page reloads.
 **Orders tab** (both roles)
 
 - Type toggle: Counter | Catering
-- Counter: tap items from a category-grouped list into a running bill, `+/-` on
-  quantity, live total, Cash/UPI, Save
-- Catering: description, amount, payment mode, Save
-- Today: order count, revenue, UPI split, cash split
+- Counter: tap items from a category-grouped list into a running bill — one tap
+  adds, no dropdown — `+/-` on quantity, remove a line, live total, Cash/UPI, Save
+- Catering: description, amount, payment mode, optional customer name and phone,
+  Save
+- Today: order count, revenue, UPI split, cash split, items sold, top 3 items
+- The just-saved order shows Undo (invalidate and reload into the form)
 - Today's orders, newest first, each with Mark invalid. Invalid rows stay
   visible, struck through, excluded from totals.
 
-**Menu tab** (owner only — hidden for staff and denied by the database
-regardless): add item, edit, availability toggle, grouped by category.
+**Menu tab**
+
+- Staff see the item list with availability toggles only. No prices editable, no
+  add or delete, enforced by the database.
+- Owner additionally gets add, edit, price and category changes.
+
+**Export** (owner only): pick a date range, download CSV of orders and their
+line items. Money data with no way out of the system is a single point of
+failure — this covers accounting handoff, and gives an off-Supabase copy without
+running a backup system.
 
 ### `menu.html`
 
@@ -240,23 +313,36 @@ Checked in and re-runnable:
 - `sql/seed.sql` — starting menu items
 - `sql/verify_rls.sql` — assertions that must **fail**
 
-`verify_rls.sql` must confirm that each of these is rejected:
+`verify_rls.sql` must confirm that each of these is **rejected**:
 
 - anonymous SELECT on `orders`
 - anonymous SELECT on `order_items`
 - staff UPDATE of `orders.total_amount`
+- staff UPDATE of `menu_items.price`
 - staff INSERT into `menu_items`
 - any DELETE on `orders`
 
-If any of those succeeds, the deployment is misconfigured.
+and that each of these **succeeds**:
+
+- staff INSERT of an order via `create_counter_order()`
+- staff calling `mark_order_invalid()`
+- staff calling `set_item_availability()`
+- anonymous SELECT on `menu_items`
+
+If any assertion goes the wrong way, the deployment is misconfigured.
 
 Manual QA checklist:
 
-- Staff login sees no Menu tab, and cannot edit an amount
+- Staff login can toggle availability but cannot change a price
+- Staff login cannot edit an amount
+- Undo on a just-saved order invalidates it and refills the entry form
 - An order entered after 8:00pm IST appears on that day's dashboard, not the next
 - Marking an order invalid removes it from revenue while it stays visible
+- Invalid orders are excluded from items-sold and top-items figures, not just
+  from revenue
 - A catering order appears in the day's revenue alongside counter sales
 - Public `menu.html` shows available items only, and reflects a price change
+- CSV export opens in a spreadsheet with totals matching the dashboard
 - Signing out and reloading `admin.html` shows the login screen, not data
 
 ## Known risks, accepted
@@ -266,10 +352,11 @@ Manual QA checklist:
   rows.
 - **RLS is load-bearing.** A policy mistake exposes sales data, hence
   `verify_rls.sql` as a gate rather than a nicety.
-- **Menu edits are owner-only**, so staff cannot mark a juice sold out
-  mid-service. Easy to relax by granting staff UPDATE on `is_available` alone.
-- **No historical reporting** beyond the current day. The schema supports it;
-  no screen does.
+- **No historical reporting** beyond the current day. The schema supports it and
+  CSV export covers the practical need; no screen does.
+- **CSV export is manual.** Nobody is obliged to run it, so an off-Supabase copy
+  exists only as often as someone remembers. Automating it needs a scheduled job,
+  which means a server — deliberately out of scope for now.
 
 ## Open items
 
