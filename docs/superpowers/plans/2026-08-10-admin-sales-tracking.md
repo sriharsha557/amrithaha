@@ -1623,7 +1623,7 @@ async function renderToday() {
           <span>
             ${o.order_type === 'catering' ? `Catering — ${escapeHtml(o.description)}` : 'Counter'}
             <br><span class="muted">${new Date(o.created_at).toLocaleTimeString('en-IN',
-              { hour: '2-digit', minute: '2-digit' })} · ${o.payment_mode.toUpperCase()}</span>
+              { hour: '2-digit', minute: '2-digit' })} · ${escapeHtml(o.payment_mode).toUpperCase()}</span>
           </span>
           <span style="display:flex;align-items:center;gap:10px">
             <strong>${formatINR(o.total_amount)}</strong>
@@ -1659,7 +1659,9 @@ async function invalidate(orderId) {
     await renderOrdersTab();
     return;
   }
-  lastOrderId = null;
+  // Only clear when the undone order WAS the newest one. Marking an older
+  // order invalid must not strip the Undo affordance from the latest sale.
+  if (isUndo) lastOrderId = null;
   await renderToday();
 }
 ```
