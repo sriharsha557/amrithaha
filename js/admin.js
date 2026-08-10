@@ -3,6 +3,7 @@ import { supabase } from './supabase.js';
 import * as db from './db.js';
 import { addLine, changeQty, removeLine, billTotal } from './lib/bill.js';
 import { formatINR } from './lib/money.js';
+import { parseAmount } from './lib/amount.js';
 import { escapeHtml } from './lib/html.js';
 import { summarise, topItems } from './lib/summary.js';
 
@@ -177,11 +178,9 @@ async function saveOrder() {
       lines = [];
     } else {
       const description = document.getElementById('cat-desc').value.trim();
-      const rawAmount = document.getElementById('cat-amount').value.trim();
+      const amount = parseAmount(document.getElementById('cat-amount').value);
       if (!description) throw new Error('Describe the catering order.');
-      if (rawAmount === '') throw new Error('Enter the catering amount.');
-      const amount = Number(rawAmount);
-      if (!Number.isFinite(amount) || amount < 0) throw new Error('Enter a valid amount.');
+      if (amount === null) throw new Error('Enter a valid catering amount.');
       lastOrderId = await db.createCateringOrder({
         description, amount, paymentMode,
         customerName:  document.getElementById('cat-name').value.trim(),
@@ -340,8 +339,12 @@ async function renderMenuTab() {
     if (name === null) return;
     const price = prompt('Price', item.price);
     if (price === null) return;
+    const trimmedName = name.trim();
+    const amount = parseAmount(price);
+    if (!trimmedName) { alert('Enter a valid name.'); return; }
+    if (amount === null) { alert('Enter a valid price.'); return; }
     const { error } = await supabase.from('menu_items')
-      .update({ name: name.trim(), price: Number(price) }).eq('id', item.id);
+      .update({ name: trimmedName, price: amount }).eq('id', item.id);
     if (error) { alert(error.message); return; }
     await renderMenuTab();
     await renderOrdersTab();
@@ -350,10 +353,14 @@ async function renderMenuTab() {
   document.getElementById('mi-save').addEventListener('click', async () => {
     const err = document.getElementById('mi-error');
     err.classList.add('hidden');
+    const name = document.getElementById('mi-name').value.trim();
+    const amount = parseAmount(document.getElementById('mi-price').value);
+    if (!name) { err.textContent = 'Enter a valid name.'; err.classList.remove('hidden'); return; }
+    if (amount === null) { err.textContent = 'Enter a valid price.'; err.classList.remove('hidden'); return; }
     const { error } = await supabase.from('menu_items').insert({
-      name: document.getElementById('mi-name').value.trim(),
+      name,
       category: document.getElementById('mi-cat').value,
-      price: Number(document.getElementById('mi-price').value),
+      price: amount,
     });
     if (error) { err.textContent = error.message; err.classList.remove('hidden'); return; }
     await renderMenuTab();
