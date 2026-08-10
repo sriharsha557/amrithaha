@@ -70,12 +70,19 @@ export async function setAvailability(itemId, available) {
 }
 
 export async function exportRange(from, to) {
-  const { data, error } = await supabase
-    .from('orders')
-    .select('business_date, created_at, order_type, description, total_amount, payment_mode, status, order_items(item_name, unit_price, quantity, line_total)')
-    .gte('business_date', from).lte('business_date', to)
-    .order('created_at');
-  if (error) throw error;
+  const PAGE = 1000;
+  const data = [];
+  for (let offset = 0; ; offset += PAGE) {
+    const { data: page, error } = await supabase
+      .from('orders')
+      .select('business_date, created_at, order_type, description, total_amount, payment_mode, status, order_items(item_name, unit_price, quantity, line_total)')
+      .gte('business_date', from).lte('business_date', to)
+      .order('created_at').order('id')
+      .range(offset, offset + PAGE - 1);
+    if (error) throw error;
+    data.push(...page);
+    if (page.length < PAGE) break;
+  }
 
   // One CSV row per line item; catering orders emit a single row.
   const rows = [];

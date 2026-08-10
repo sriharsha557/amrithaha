@@ -1,6 +1,7 @@
 function cell(value) {
   if (value === null || value === undefined) return '';
-  const s = String(value);
+  let s = String(value);
+  if (typeof value === 'string' && /^[=+\-@\t\r]/.test(value)) s = "'" + s;
   return /[",\r\n]/.test(s) ? '"' + s.replaceAll('"', '""') + '"' : s;
 }
 

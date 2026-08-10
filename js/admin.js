@@ -25,18 +25,42 @@ function renderExport() {
       <label for="ex-to">To</label><input id="ex-to" type="date" value="${today}">
       <div style="margin-top:14px"><button class="btn-gold" id="ex-go"
            style="width:100%">Download CSV</button></div>
+      <p class="err hidden" id="ex-error"></p>
     </div>`);
 
   document.getElementById('ex-go').addEventListener('click', async () => {
+    const btn = document.getElementById('ex-go');
+    const err = document.getElementById('ex-error');
+    err.classList.add('hidden');
     const from = document.getElementById('ex-from').value;
     const to   = document.getElementById('ex-to').value;
-    const rows = await db.exportRange(from, to);
-    const blob = new Blob([toCsv(rows, EXPORT_COLUMNS)], { type: 'text/csv;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `amrithaha-${from}-to-${to}.csv`;
-    a.click();
-    URL.revokeObjectURL(a.href);
+    if (!from || !to) {
+      err.textContent = 'Pick both dates.';
+      err.classList.remove('hidden');
+      return;
+    }
+    if (from > to) {
+      err.textContent = 'The From date is after the To date.';
+      err.classList.remove('hidden');
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Preparing...';
+    try {
+      const rows = await db.exportRange(from, to);
+      const blob = new Blob([toCsv(rows, EXPORT_COLUMNS)], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `amrithaha-${from}-to-${to}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch (e) {
+      err.textContent = e.message || 'Could not export.';
+      err.classList.remove('hidden');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Download CSV';
+    }
   });
 }
 
