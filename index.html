@@ -7,7 +7,7 @@
 <meta name="description" content="Millet-based breakfast, lunch and healthy products in Madhapur, Hyderabad. Freshly prepared daily — no maida, low oil, fresh ingredients. Now open on 100ft Road.">
 
 <link rel="icon" href="Logos/amrithaha_icon_light.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="Logos/amrithaha.svg">
+<link rel="apple-touch-icon" href="Logos/amrithaha_badge_web.png">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -80,12 +80,14 @@ header.scrolled{border-color:#e3dcc9;box-shadow:0 8px 24px -20px rgba(0,0,0,.4)}
 .trust .dot svg{width:15px;height:15px}
 
 .hero-art{position:relative;display:grid;place-items:center;min-height:360px}
-.blob{position:absolute;inset:0;margin:auto;width:420px;height:420px;background:
-  radial-gradient(circle at 30% 30%, #3a9a58, var(--green-700));border-radius:46% 54% 55% 45%/48% 44% 56% 52%;
-  filter:drop-shadow(0 30px 50px rgba(23,85,44,.35));animation:morph 12s ease-in-out infinite}
+/* Soft halo, not a solid disc — the badge has its own dark green ring, and a
+   green blob behind it turned the two into one muddy shape. */
+.blob{position:absolute;inset:0;margin:auto;width:460px;height:460px;background:
+  radial-gradient(circle at 50% 50%, rgba(95,182,90,.30), rgba(46,139,78,.10) 55%, transparent 72%);
+  border-radius:46% 54% 55% 45%/48% 44% 56% 52%;animation:morph 12s ease-in-out infinite}
 @keyframes morph{0%,100%{border-radius:46% 54% 55% 45%/48% 44% 56% 52%}50%{border-radius:56% 44% 43% 57%/52% 56% 44% 48%}}
-.hero-art .emblem{position:relative;width:300px;height:300px;object-fit:contain;z-index:2;border-radius:50%;
-  filter:drop-shadow(0 16px 30px rgba(18,63,33,.32))}
+.hero-art .emblem{position:relative;width:330px;height:330px;object-fit:contain;z-index:2;
+  filter:drop-shadow(0 18px 34px rgba(18,63,33,.28))}
 .grainbg{position:absolute;z-index:1;opacity:.9}
 
 /* ---------- section shells ---------- */
@@ -193,7 +195,8 @@ footer{background:var(--green-900);color:#cfe0d0;padding:56px 0 40px}
 /* ---------- responsive ---------- */
 @media (max-width:900px){
   .hero-grid{grid-template-columns:1fr;padding:44px 0 60px}
-  .hero-art{order:-1;min-height:300px}.blob{width:320px;height:320px}.hero-art .emblem{width:230px}
+  .hero-art{order:-1;min-height:300px}.blob{width:340px;height:340px}
+  .hero-art .emblem{width:240px;height:240px}
   .hero p.lead{max-width:none}
   .why-grid{grid-template-columns:1fr 1fr}
   .menu-grid{grid-template-columns:1fr 1fr}
@@ -270,7 +273,7 @@ footer{background:var(--green-900);color:#cfe0d0;padding:56px 0 40px}
   <div class="wrap nav">
     <a class="brand" href="#top" aria-label="Amrithaha home">
       <img class="mark" src="Logos/amrithaha_icon_light.svg" alt="Amrithaha icon">
-      <span><span class="name">Amrithaha</span><br><span class="te">అమృతః</span></span>
+      <span><span class="name">Amrithaha</span><br><span class="te">అమృతహ</span></span>
     </a>
     <nav class="links" id="nav-links">
       <a href="#why">Why us</a>
@@ -314,7 +317,7 @@ footer{background:var(--green-900);color:#cfe0d0;padding:56px 0 40px}
       </div>
       <div class="hero-art" aria-hidden="true">
         <div class="blob"></div>
-        <img class="emblem" src="Logos/amrithaha.svg" alt="Amrithaha — అమృతః" width="400" height="400">
+        <img class="emblem" src="Logos/amrithaha_badge_web.png" alt="Amrithaha — అమృతహ — Healthy Kitchen" width="720" height="720">
       </div>
     </div>
   </section>
@@ -357,7 +360,7 @@ footer{background:var(--green-900);color:#cfe0d0;padding:56px 0 40px}
             <span class="tag">Morning</span><span class="tele">అల్పాహారం</span></div>
           <div class="body"><h4>🍳 Breakfast</h4><p>Millet dosa &amp; idli · Egg options · Healthy shakes</p></div></div>
         <div class="dish"><div class="top">
-            <img src="images/meals.jpg" alt="Millet bowl with fresh vegetables and protein" loading="lazy" width="1280" height="896">
+            <img src="images/meals.jpeg" alt="Millet bowl with fresh vegetables and protein" loading="lazy" width="1280" height="896">
             <span class="tag">Fixed daily menu</span><span class="tele">భోజనం</span></div>
           <div class="body"><h4>🍛 Lunch</h4><p>Millet bowls · Balanced meals · Home-style cooking</p></div></div>
         <div class="dish"><div class="top no-photo">
@@ -395,7 +398,7 @@ footer{background:var(--green-900);color:#cfe0d0;padding:56px 0 40px}
       <div class="contact-left">
         <span class="badge-open"><span class="pulse"></span> Now open</span>
         <h2>Visit Amrithaha.</h2>
-        <div class="te">అమృతః · Madhapur</div>
+        <div class="te">అమృతహ · Madhapur</div>
         <p>Walk in for breakfast, lunch or healthy products. Call or message us on WhatsApp any time.</p>
         <div class="reach">
           <a class="call" href="tel:+919392116251">
@@ -436,7 +439,7 @@ footer{background:var(--green-900);color:#cfe0d0;padding:56px 0 40px}
     <div class="foot-top">
       <div class="foot-brand">
         <img src="Logos/amrithaha_icon_light.svg" width="40" alt="Amrithaha icon">
-        <span><span class="name">Amrithaha</span><br><span class="te">అమృతః · Madhapur</span></span>
+        <span><span class="name">Amrithaha</span><br><span class="te">అమృతహ · Madhapur</span></span>
       </div>
       <nav class="foot-links">
         <a href="#why">Why us</a><a href="#menu">The food</a><a href="#how">How it works</a>
