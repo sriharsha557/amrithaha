@@ -125,7 +125,19 @@ section{padding:86px 0}
 .dish p{color:var(--muted);font-size:.92rem;margin-top:4px}
 .tag{position:absolute;top:12px;left:12px;z-index:2;background:var(--gold);color:var(--ink);font-size:.72rem;font-weight:700;
   letter-spacing:.04em;padding:5px 11px;border-radius:999px;text-transform:uppercase}
-.menu-note{margin-top:30px;color:var(--muted);font-size:1rem}
+.menu-grid.pair{grid-template-columns:repeat(2,1fr);max-width:860px;margin:0 auto}
+.menu-grid.pair .top{height:210px}
+.menu-grid.trio{grid-template-columns:repeat(3,1fr);margin-top:18px}
+.menu-grid.trio .top{height:150px}
+.menu-sub{margin:44px 0 4px;text-align:center;font-weight:600;font-size:.82rem;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--gold-700)}
+.items{list-style:none;margin-top:10px}
+.items li{display:flex;justify-content:space-between;align-items:baseline;gap:14px;
+  padding:11px 0;border-bottom:1px solid #f2ecdc}
+.items li:last-child{border-bottom:0;padding-bottom:2px}
+.items strong{font-weight:600;font-size:1.04rem;color:var(--ink)}
+.items span{color:var(--muted);font-size:.88rem;text-align:right;flex:none}
+.menu-note{margin-top:30px;color:var(--muted);font-size:1rem;text-align:center}
 
 /* ---------- steps ---------- */
 .steps{background:var(--green-700);color:#eaf3e9}
@@ -199,7 +211,7 @@ footer{background:var(--green-900);color:#cfe0d0;padding:56px 0 40px}
   .hero-art .emblem{width:240px;height:240px}
   .hero p.lead{max-width:none}
   .why-grid{grid-template-columns:1fr 1fr}
-  .menu-grid{grid-template-columns:1fr 1fr}
+  .menu-grid,.menu-grid.trio{grid-template-columns:1fr 1fr}
   .steps-grid{grid-template-columns:1fr}
   .contact-grid{grid-template-columns:1fr}
   .links{position:fixed;inset:80px 0 auto 0;background:var(--cream);flex-direction:column;gap:0;
@@ -214,7 +226,7 @@ footer{background:var(--green-900);color:#cfe0d0;padding:56px 0 40px}
   body{padding-bottom:74px}
 }
 @media (max-width:560px){
-  .why-grid,.menu-grid{grid-template-columns:1fr}
+  .why-grid,.menu-grid,.menu-grid.pair,.menu-grid.trio{grid-template-columns:1fr}
   .why-grid .card:last-child{grid-column:span 1}
   .foot-top{flex-direction:column;align-items:flex-start}
 }
@@ -297,7 +309,7 @@ footer{background:var(--green-900);color:#cfe0d0;padding:56px 0 40px}
   <section class="hero" style="padding-top:0">
     <div class="wrap hero-grid">
       <div class="hero-copy">
-        <span class="eyebrow">🌱 Millet based healthy food · Madhapur</span>
+        <span class="eyebrow">🌱 Millet-based · Madhapur</span>
         <h1>Healthy food that <em>actually</em> tastes good.</h1>
         <div class="te-line">ఆరోగ్యమే మహాభాగ్యం</div>
         <p class="lead">Freshly prepared millet-based breakfast, lunch &amp; healthy options — now open near you.</p>
@@ -352,13 +364,35 @@ footer{background:var(--green-900);color:#cfe0d0;padding:56px 0 40px}
       <div class="sec-head">
         <span class="kicker">On the plate</span>
         <h2>What you'll find here.</h2>
-        <p>Breakfast, a fixed daily lunch menu, healthy products to take home — and catering when you need it.</p>
+        <p>Here's what's on the counter right now — plus lunch, take-home products and catering whenever you need them.</p>
       </div>
-      <div class="menu-grid">
+      <div class="menu-grid pair">
         <div class="dish"><div class="top">
             <img src="images/breakfast.jpg" alt="Millet dosa and idli served with fresh chutney" loading="lazy" width="1000" height="1000">
             <span class="tag">Morning</span><span class="tele">అల్పాహారం</span></div>
-          <div class="body"><h4>🍳 Breakfast</h4><p>Millet dosa &amp; idli · Egg options · Healthy shakes</p></div></div>
+          <div class="body">
+            <h4>Healthy Breakfasts</h4>
+            <ul class="items">
+              <li><strong>Millet Idli</strong><span>soft &amp; steamed</span></li>
+              <li><strong>Millet Dosa</strong><span>crisp &amp; golden</span></li>
+              <li><strong>Other Options</strong><span>chosen fresh, daily</span></li>
+            </ul>
+          </div></div>
+        <div class="dish"><div class="top no-photo">
+            <svg class="top-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3h9l-1 5a4.5 4.5 0 0 1-4.5 4H12a4.5 4.5 0 0 1-4-4L8 3z"/><path d="M12 12v6"/><path d="M8.5 21h7"/><path d="M17 5h2.5a2 2 0 0 1 0 4H16"/></svg>
+            <span class="tag">All day</span><span class="tele">పానీయాలు</span></div>
+          <div class="body">
+            <h4>Healthy Drinks</h4>
+            <ul class="items">
+              <li><strong>Ragi Java</strong><span>wholesome ragi malt</span></li>
+              <li><strong>ABC Juice</strong><span>apple · beetroot · carrot</span></li>
+              <li><strong>Refreshments</strong><span>available through the day</span></li>
+            </ul>
+          </div></div>
+      </div>
+
+      <p class="menu-sub">Also at Amrithaha</p>
+      <div class="menu-grid trio">
         <div class="dish"><div class="top">
             <img src="images/meals.jpeg" alt="Millet bowl with fresh vegetables and protein" loading="lazy" width="1280" height="896">
             <span class="tag">Fixed daily menu</span><span class="tele">భోజనం</span></div>
@@ -372,6 +406,7 @@ footer{background:var(--green-900);color:#cfe0d0;padding:56px 0 40px}
             <span class="tag">On order</span><span class="tele">కేటరింగ్</span></div>
           <div class="body"><h4>🎉 Catering</h4><p>Small parties · Office orders · Custom healthy menus</p></div></div>
       </div>
+
       <p class="menu-note">Menu changes daily based on fresh preparation. <a href="https://wa.me/919392116251" target="_blank" rel="noopener" style="color:var(--green-500);font-weight:600">Ask us what's cooking today →</a></p>
     </div>
   </section>
